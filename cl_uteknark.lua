@@ -60,11 +60,11 @@ function makeToast(subject,message)
 end
 
 function serverlog(...)
-    TriggerServerEvent('esx_uteknark:log',...)
+    TriggerServerEvent('qb_uteknark:log',...)
 end
 
-RegisterNetEvent('esx_uteknark:make_toast')
-AddEventHandler ('esx_uteknark:make_toast', function(subject,message)
+RegisterNetEvent('qb_uteknark:make_toast')
+AddEventHandler ('qb_uteknark:make_toast', function(subject,message)
     makeToast(subject, message)
 end)
 
@@ -211,8 +211,8 @@ function RunScenario(name, facing)
     inScenario = true
 end
 
-RegisterNetEvent('esx_uteknark:do')
-AddEventHandler ('esx_uteknark:do', function(scenarioName, location)
+RegisterNetEvent('qb_uteknark:do')
+AddEventHandler ('qb_uteknark:do', function(scenarioName, location)
     if Config.Scenario[scenarioName] then
         print("Got order for scenario " .. scenarioName)
         Citizen.CreateThread(function()
@@ -232,11 +232,11 @@ AddEventHandler ('esx_uteknark:do', function(scenarioName, location)
     end
 end)
 
-RegisterNetEvent('esx_uteknark:attempt_plant')
-AddEventHandler ('esx_uteknark:attempt_plant', function()
+RegisterNetEvent('qb_uteknark:attempt_plant')
+AddEventHandler ('qb_uteknark:attempt_plant', function()
     local plantable, message, location, _, soil = getPlantingLocation()
     if plantable then
-        TriggerServerEvent('esx_uteknark:success_plant', location, soil)
+        TriggerServerEvent('qb_uteknark:success_plant', location, soil)
         lastAction = GetGameTimer()
     else
         makeToast(_U('planting_text'), _U(message))
@@ -306,13 +306,13 @@ Citizen.CreateThread(function()
                             lastAction = now
                             table.remove(activePlants, closestIndex)
                             DeleteObject(closestPlant.object)
-                            TriggerServerEvent('esx_uteknark:remove', closestPlant.id, myLocation)
+                            TriggerServerEvent('qb_uteknark:remove', closestPlant.id, myLocation)
                         else
                             if stage.interact then
                                 interactHelp(closestPlant.stage, _U(stage.label))
                                 if IsControlJustPressed(0, 38) then
                                     lastAction = now
-                                    TriggerServerEvent('esx_uteknark:frob', closestPlant.id, myLocation)
+                                    TriggerServerEvent('qb_uteknark:frob', closestPlant.id, myLocation)
                                 end
                             else
                                 passiveHelp(closestPlant.stage, _U(stage.label))
@@ -390,8 +390,8 @@ AddEventHandler('onResourceStop', function(resourceName)
     end
 end)
 
-RegisterNetEvent('esx_uteknark:toggle_debug')
-AddEventHandler ('esx_uteknark:toggle_debug', function()
+RegisterNetEvent('qb_uteknark:toggle_debug')
+AddEventHandler ('qb_uteknark:toggle_debug', function()
     if not debug.active then
         serverlog('enabled debugging')
         debug.active = true
@@ -401,8 +401,8 @@ AddEventHandler ('esx_uteknark:toggle_debug', function()
     end
 end)
 
-RegisterNetEvent('esx_uteknark:pyromaniac')
-AddEventHandler ('esx_uteknark:pyromaniac',function(location)
+RegisterNetEvent('qb_uteknark:pyromaniac')
+AddEventHandler ('qb_uteknark:pyromaniac',function(location)
     if Config.Burn.Enabled then
         local myLocation = GetEntityCoords(PlayerPedId())
         if not location then
@@ -455,8 +455,8 @@ Citizen.CreateThread(function()
     end
 end)
 
-RegisterNetEvent('esx_uteknark:groundmat')
-AddEventHandler ('esx_uteknark:groundmat', function()
+RegisterNetEvent('qb_uteknark:groundmat')
+AddEventHandler ('qb_uteknark:groundmat', function()
     local plantable, message, where, normal, material = getPlantingLocation(true)
     TriggerEvent("chat:addMessage", {args={'Ground material', material}})
     serverlog('Ground material:',material)
@@ -471,8 +471,8 @@ AddEventHandler ('esx_uteknark:groundmat', function()
     end
 end)
 
-RegisterNetEvent('esx_uteknark:test_forest')
-AddEventHandler ('esx_uteknark:test_forest',function(count, randomStage)
+RegisterNetEvent('qb_uteknark:test_forest')
+AddEventHandler ('qb_uteknark:test_forest',function(count, randomStage)
     local origin = GetEntityCoords(PlayerPedId())
     
     TriggerEvent("chat:addMessage", {args={'UteKnark','Target forest size: '..count}})
@@ -501,5 +501,5 @@ AddEventHandler ('esx_uteknark:test_forest',function(count, randomStage)
         end
     end
     TriggerEvent("chat:addMessage", {args={'UteKnark', 'Actual viable locations: '..#forest}})
-    TriggerServerEvent('esx_uteknark:test_forest', forest)
+    TriggerServerEvent('qb_uteknark:test_forest', forest)
 end)

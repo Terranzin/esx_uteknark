@@ -1,10 +1,12 @@
-local ESX = nil
-local oneSyncEnabled = GetConvar('onesync_enabled', false)
+local oneSyncEnabled = GetConvar('onesync_enabled', true)
 local VERBOSE = false
 local lastPlant = {}
 local tickTimes = {}
 local tickPlantCount = 0
 local VERSION = '1.1.4'
+
+local QBCore = nil
+local QBCore = exports['qb-core']:GetCoreObject()
 
 AddEventHandler('playerDropped',function(why)
     lastPlant[source] = nil
@@ -37,16 +39,16 @@ end
 
 function HasItem(who, what, count)
     count = count or 1
-    if ESX == nil then
-        log("HasItem: No ESX Object!")
+    if QBCore == nil then
+        log("HasItem: No QB Object!")
         return false
     end
-    local xPlayer = ESX.GetPlayerFromId(who)
+    local xPlayer = QBCore.Functions.GetPlayer(who)
     if xPlayer == nil then
         log("HasItem: Failed to resolve xPlayer from", who)
         return false
     end
-    local itemspec =  xPlayer.getInventoryItem(what)
+    local itemspec =  xPlayer.Functions.GetItemByName(what)
     if itemspec then
         if itemspec.count >= count then
             return true
@@ -61,19 +63,19 @@ end
 
 function TakeItem(who, what, count)
     count = count or 1
-    if ESX == nil then
-        log("TakeItem: No ESX Object!")
+    if QBCore == nil then
+        log("TakeItem: No QB Object!")
         return false
     end
-    local xPlayer = ESX.GetPlayerFromId(who)
+    local xPlayer = QBCore.Functions.GetPlayer(who)
     if xPlayer == nil then
         log("TakeItem: Failed to resolve xPlayer from", who)
         return false
     end
-    local itemspec =  xPlayer.getInventoryItem(what)
+    local itemspec =  xPlayer.Functions.GetItemByName(what)
     if itemspec then
         if itemspec.count >= count then
-            xPlayer.removeInventoryItem(what, count)
+            xPlayer.Functions.RemoveItem(what, count)
             return true
         else
             return false
@@ -86,19 +88,19 @@ end
 
 function GiveItem(who, what, count)
     count = count or 1
-    if ESX == nil then
-        log("GiveItem: No ESX Object!")
+    if QBCore == nil then
+        log("GiveItem: No QB Object!")
         return false
     end
-    local xPlayer = ESX.GetPlayerFromId(who)
+    local xPlayer = QBCore.Functions.GetPlayer(who)
     if xPlayer == nil then
         log("GiveItem: Failed to resolve xPlayer from", who)
         return false
     end
-    local itemspec =  xPlayer.getInventoryItem(what)
+    local itemspec =  xPlayer.Functions.GetItemByName(what)
     if itemspec then
         if not itemspec.limit or itemspec.limit == -1 or itemspec.count + count <= itemspec.limit then
-            xPlayer.addInventoryItem(what, count)
+            xPlayer.Functions.AddItem(what, count)
             return true
         else
             return false
@@ -110,7 +112,7 @@ function GiveItem(who, what, count)
 end
 
 function makeToast(target, subject, message)
-    TriggerClientEvent('esx_uteknark:make_toast', target, subject, message)
+    TriggerClientEvent('qb_uteknark:make_toast', target, subject, message)
 end
 function inChat(target, message)
     if target == 0 then
@@ -134,11 +136,11 @@ end
 
 function doScenario(who, what, where)
     verbose('Telling', who,'to',what,'at',where)
-    TriggerClientEvent('esx_uteknark:do', who, what, where)
+    TriggerClientEvent('qb_uteknark:do', who, what, where)
 end
 
-RegisterNetEvent('esx_uteknark:success_plant')
-AddEventHandler ('esx_uteknark:success_plant', function(location, soil)
+RegisterNetEvent('qb_uteknark:success_plant')
+AddEventHandler ('qb_uteknark:success_plant', function(location, soil)
     local src = source
     if oneSyncEnabled and false then -- "and false" because something is weird in my OneSync stuff
         local ped = GetPlayerPed(src)
@@ -177,14 +179,14 @@ AddEventHandler ('esx_uteknark:success_plant', function(location, soil)
     end
 end)
 
-RegisterNetEvent('esx_uteknark:log')
-AddEventHandler ('esx_uteknark:log',function(...)
+RegisterNetEvent('qb_uteknark:log')
+AddEventHandler ('qb_uteknark:log',function(...)
     local src = source
     log(src,GetPlayerName(src),...)
 end)
 
-RegisterNetEvent('esx_uteknark:test_forest')
-AddEventHandler ('esx_uteknark:test_forest',function(forest)
+RegisterNetEvent('qb_uteknark:test_forest')
+AddEventHandler ('qb_uteknark:test_forest',function(forest)
     local src = source
 
 
@@ -224,23 +226,23 @@ Citizen.CreateThread(function()
     local ESXTries = 60
     local itemsLoaded = false
     while not itemsLoaded and ESXTries > 0 do
-        TriggerEvent('esx:getSharedObject', function(obj)
-            ESX = obj
-            if keyCount(ESX.Items) > 0 then
+        local QBCore = exports['qb-core']:GetCoreObject()
+            QBCore = obj
+            if keyCount(QBCore.Shared.Items) > 0 then
                 itemsLoaded = true
                 for forWhat,itemName in pairs(Config.Items) do
-                    if ESX.Items[itemName] then
-                        log(forWhat,'item in configuration ('..itemName..') found in ESX: Good!')
+                    if QBCore.Shared.Items[itemName] then
+                        log(forWhat,'item in configuration ('..itemName..') found in QBCore: Good!')
                     else
-                        log('WARNING:',forWhat,'item in cofiguration ('..itemName..') does not exist!')
+                        log('WARNING:',forWhat,'item in configuration ('..itemName..') does not exist!')
                     end
                 end
-                ESX.RegisterUsableItem(Config.Items.Seed, function(source)
+                QBCore.Functions.CreateUseableItem(Config.Items.Seed, function(source)
                     local now = os.time()
                     local last = lastPlant[source] or 0
                     if now > last + (Config.ActionTime/1000) then
                         if HasItem(source, Config.Items.Seed) then
-                            TriggerClientEvent('esx_uteknark:attempt_plant', source)
+                            TriggerClientEvent('qb_uteknark:attempt_plant', source)
                             lastPlant[source] = now
                         else
                             makeToast(source, _U('planting_text'), _U('planting_no_seed'))
@@ -250,14 +252,13 @@ Citizen.CreateThread(function()
                     end
                 end)
             end
-        end)
+        end
         Citizen.Wait(1000)
         ESXTries = ESXTries - 1
+    end)
+    if not QBCore then
+        log("CRITICAL ERROR: Could not obtain QBCore object!\n")
     end
-    if not ESX then
-        log("CRITICAL ERROR: Could not obtain ESX object!\n")
-    end
-end)
 
 Citizen.CreateThread(function()
     local databaseReady = false
@@ -328,7 +329,7 @@ local commands = {
         if source == 0 then
             log('Client debugging on the console? Nope.')
         else
-            TriggerClientEvent('esx_uteknark:toggle_debug', source)
+            TriggerClientEvent('qb_uteknark:toggle_debug', source)
         end
     end,
     stage = function(source, args)
@@ -366,7 +367,7 @@ local commands = {
             local randomStage = false
             if args[2] then randomStage = true end
 
-            TriggerClientEvent('esx_uteknark:test_forest', source, count, randomStage)
+            TriggerClientEvent('qb_uteknark:test_forest', source, count, randomStage)
 
         end
     end,
@@ -387,14 +388,14 @@ local commands = {
         if source == 0 then
             log('Console. The ground material is CONSOLE.')
         else
-            TriggerClientEvent('esx_uteknark:groundmat', source)
+            TriggerClientEvent('qb_uteknark:groundmat', source)
         end
     end,
     pyro = function(source, args)
         if source == 0 then
             log('You can\'t really test particle effects on the console.')
         else
-            TriggerClientEvent('esx_uteknark:pyromaniac', source)
+            TriggerClientEvent('qb_uteknark:pyromaniac', source)
         end
     end,
 }
