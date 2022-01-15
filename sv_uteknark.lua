@@ -6,7 +6,6 @@ local tickPlantCount = 0
 local VERSION = '1.1.4'
 
 local QBCore = nil
-local QBCore = exports['qb-core']:GetCoreObject()
 
 AddEventHandler('playerDropped',function(why)
     lastPlant[source] = nil
